@@ -180,7 +180,7 @@ process build_snpeff_db {
 
   script:
   """
-  build_snpeff_db.py --accession `head -1 ${ref} | tr -d \">\" | cut -f 1 -d \" \"`
+  build_snpeff_db.py --accession ${params.snpeff_ref}
   """
 }
 
@@ -198,7 +198,7 @@ process snpeff {
 
   script:
   """
-  snpEff -noLog -hgvs1LetterAa PP109421.1  ${variants} > ${sample_id}.ann.vcf
+  snpEff -noLog -hgvs1LetterAa ${params.snpeff_ref}  ${variants} > ${sample_id}.ann.vcf
   """
 }
 
