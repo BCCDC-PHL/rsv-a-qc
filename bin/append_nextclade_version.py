@@ -8,8 +8,10 @@ def add_nextclade_version(input_file, output_file, dataset_version, nextclade_ve
         reader = csv.reader(f_in, delimiter='\t')
     
         header = next(reader)
-        header.append('dataset_version')
+        
         header.append('nextclade_version')
+        header.append('nextclade_dataset_version')
+        
         
         with open(output_file, 'w', newline='') as f_out:
 
@@ -19,8 +21,8 @@ def add_nextclade_version(input_file, output_file, dataset_version, nextclade_ve
             
             for row in reader:
  
-                row.append(dataset_version)
                 row.append(nextclade_version)
+                row.append(dataset_version)
    
                 writer.writerow(row)
 
