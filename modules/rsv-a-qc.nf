@@ -89,7 +89,8 @@ process nextclade {
 
 
   dataset_version=$(nextclade dataset list -n ${params.nextclade_dataset} --json | python3 -c "import json,sys; data=json.load(sys.stdin); print(data[0]['version']['tag'])")
-  python append_nextclade_version.py --nextclade_tsv ${run_id}_nextclade_qc.tsv --out ${run_id}_nextclade_qc.tsv --nextclade_version ${dataset_version}
+  nextclade_version=$(nextclade --version | awk '{print $2}')
+  python append_nextclade_version.py --nextclade_tsv ${run_id}_nextclade_qc.tsv --out ${run_id}_nextclade_qc.tsv --nextclade_version ${nextclade_version} --dataset_version ${dataset_version}
 
   """
 }
