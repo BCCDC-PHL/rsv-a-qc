@@ -6,7 +6,7 @@ include { nextclade_dataset } from './modules/rsv-a-qc.nf'
 include { identify_complete_genomes } from './modules/rsv-a-qc.nf'
 include { prepare_multi_fasta } from './modules/rsv-a-qc.nf'
 include { nextclade } from './modules/rsv-a-qc.nf'
-include {detect_resistance_mutations} from './modules/rsv-a-qc.nf'
+include { detect_resistance_mutations } from './modules/rsv-a-qc.nf'
 include { augur_align } from './modules/rsv-a-qc.nf'
 include { augur_tree } from './modules/rsv-a-qc.nf'
 include { make_alleles } from './modules/rsv-a-qc.nf'
@@ -59,7 +59,7 @@ workflow {
 
     nextclade(prepare_multi_fasta.out.join(nextclade_dataset.out.dataset))
 
-    detect_resistance_mutations(nextclade.out.qc.join(ch_resistance_mutations).join(ch_ref_alleles)))
+    detect_resistance_mutations(nextclade.out.qc.join(ch_resistance_mutations).join(ch_ref_alleles))
 
     augur_align(prepare_multi_fasta.out.join(nextclade_dataset.out.ref))
 
