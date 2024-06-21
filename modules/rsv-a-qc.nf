@@ -95,6 +95,31 @@ process nextclade {
   """
 }
 
+
+process detect_resistance_mutations {
+  
+  tag { sample_id }
+
+  input:
+    tuple val(sample_id), path(nextclade_qc), path(resistance_mutations), path(ref_alleles)
+
+  output:
+    tuple val(sampl_id), path("${sample_id}_RSVA_F_resistance_profile.csv"), emit: resistance
+
+  script:
+
+  """
+
+  parse_nextclade_for_res_genes.py \
+  --nextclade ${nextclade_qc} \
+  --ref_amino_acid ${ref_alleles} \
+  --resistance_mutation_list ${resistance_mutations} \
+  --output ${sample_id}_RSVA_F_resistance_profile.csv
+
+  """
+
+}
+
 process augur_align {
 
   tag { run_id }

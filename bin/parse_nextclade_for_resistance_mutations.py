@@ -13,9 +13,13 @@ def parse_resistance_mutations(resistance_mutation_list_df):
 
 def parse_nextclade(nextclade_df, gene):
     # Parse nextclade results, select mutations in gene of interest and remove gene from mutation info
-    aa_substitutions = nextclade_df['aaSubstitutions'].str.split(',', expand=True).stack().tolist()
-    filtered_aa_substitutions = [sub.split(':', 1)[1] for sub in aa_substitutions if sub.startswith(gene + ':')]
-    return filtered_aa_substitutions
+    aa_substitutions_per_sample = {}
+    for index, row in nextclade_df.iterrows():
+        seq_name = row['seqName'].replace(' Human respiratory syncytial virus B isolate hRSV/B/Australia/VIC-RCH056/2019, complete genome', '')
+        aa_substitutions = row['aaSubstitutions'].split(',')
+        filtered_aa_substitutions = [sub.split(':', 1)[1] for sub in aa_substitutions if sub.startswith(gene + ':')]
+        aa_substitutions_per_sample[seq_name] = filtered_aa_substitutions
+    return aa_substitutions_per_sample
 
 def detect_resistance_single_mutation(mutation, aa_substitutions, ref_positions_df):
     detected = False
@@ -64,7 +68,7 @@ def detect_resistance_single_mutation(mutation, aa_substitutions, ref_positions_
             else:
                 detected = False
                 ref_amino_acid = ref_amino_acid_at_position.iloc[0]['Reference_AA']
-                note += f"This sample contains amino acid {ref_amino_acid} at position {position}. This amino acid is the same as the reference, which contains a different amino acid than the wild type but does not contain the mutant amino acid that confers resistance.\n"
+                note += f"This sample contains amino acid {ref_amino_acid} at position {position}. This amino acid is the same as the reference which contains a different amino acid than the wild type but does not contain the mutant amino acid that confers resistance.\n"
 
     # If mutation is not in aa_substitutions and not found in ref_positions_df
     elif ref_amino_acid_at_position.empty:
@@ -77,25 +81,25 @@ def detect_resistance_combination_mutation(mutations, aa_substitutions, ref_posi
     detected = True 
     note = ""
 
-    # determine result for each individual mutation
+    # Determine result for each individual mutation
     for mutation in mutations:
         single_mutation_result = detect_resistance_single_mutation(mutation, aa_substitutions, ref_positions_df)
         mutation_detected = single_mutation_result[1]
         mutation_note = single_mutation_result[2]
 
-        # if any mutation is not detected, then combo mutation is false
+        # If any mutation is not detected, then combo mutation is false
         if not mutation_detected:
             detected = False
 
         note += mutation_note + "\n"
 
-    # output which mutations detected out of combo
+    # Output which mutations detected out of combo
     if detected:
         detected_mutations = [mutation for mutation in mutations if detect_resistance_single_mutation(mutation, aa_substitutions, ref_positions_df)[1]]
-        note += f"All mutations detected: {', '.join(detected_mutations)}\n"
+        note += f"All mutations detected: {' '.join(detected_mutations)}\n"
     else:
         undetected_mutations = [mutation for mutation in mutations if not detect_resistance_single_mutation(mutation, aa_substitutions, ref_positions_df)[1]]
-        note += f"Mutations not detected: {', '.join(undetected_mutations)}\n"
+        note += f"Mutations not detected: {' '.join(undetected_mutations)}\n"
 
     note = note.strip().replace('\n', ' ').replace('..', '')
 
@@ -116,33 +120,41 @@ def main():
     nextclade_df = pd.read_csv(args.nextclade, sep='\t')
     resistance_mutation_list_df = pd.read_csv(args.resistance_mutation_list)
 
+
+
     # Parse the list of resistance mutations from input
     resistance_mutations = parse_resistance_mutations(resistance_mutation_list_df)
     # Parse the amino acid mutations detected in data
-    nextclade_aa_subs_detected = parse_nextclade(nextclade_df, gene_of_interest)
+    aa_substitutions_per_sample = parse_nextclade(nextclade_df, gene_of_interest)
+
+    print(aa_substitutions_per_sample)
 
     results_list = []
 
-    # For each mutation in the list of resistance mutations
-    for mutations in resistance_mutations:
-        result = None
-        # Check if combination of mutations or single mutation
-        if len(mutations) > 1:
-            result = detect_resistance_combination_mutation(mutations, nextclade_aa_subs_detected, ref_mutation_positions_df)
-        else:
-            result = detect_resistance_single_mutation(mutations[0], nextclade_aa_subs_detected, ref_mutation_positions_df)
-        
-        # For output file, recombine combination of mutations into original format
-        mutation_name = "+".join(mutations)  
-        detected = result[1]
-        note = result[2]
-        gene = gene_of_interest
+    # For each sample in nextclade results
+    for seq_name, aa_subs in aa_substitutions_per_sample.items():
 
-        results_list.append([gene, mutation_name, 'Present' if detected else 'Absent', note])
+        
+        # For each mutation in the list of resistance mutations
+        for mutations in resistance_mutations:
+            result = None
+            # Check if combination of mutations or single mutation
+            if len(mutations) > 1:
+                result = detect_resistance_combination_mutation(mutations, aa_subs, ref_mutation_positions_df)
+            else:
+                result = detect_resistance_single_mutation(mutations[0], aa_subs, ref_mutation_positions_df)
+            
+            # For output file, recombine combination of mutations into original format
+            mutation_name = "+".join(mutations)  
+            detected = result[1]
+            note = result[2]
+            gene = gene_of_interest
+
+            results_list.append([seq_name, gene, mutation_name, 'Present' if detected else 'Absent', note])
 
     # Output df with the resistance mutation, whether it was detected in results and note about results.
-    results_df = pd.DataFrame(results_list, columns=['Gene','Mutation', 'Detected', 'Note'])
-    results_df.to_csv(args.output, index=False )
+    results_df = pd.DataFrame(results_list, columns=['seqName', 'Gene', 'Mutation', 'Detected', 'Note'])
+    results_df.to_csv(args.output, index=False, quoting=csv.QUOTE_NONE, escapechar='\\')
 
 if __name__ == "__main__":
     main()
