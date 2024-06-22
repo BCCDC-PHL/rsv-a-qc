@@ -59,7 +59,7 @@ workflow {
 
     nextclade(prepare_multi_fasta.out.join(nextclade_dataset.out.dataset))
 
-    detect_resistance_mutations(nextclade.out.qc.join(ch_resistance_mutations).join(ch_ref_alleles))
+    detect_resistance_mutations(nextclade.out.qc.combine(ch_resistance_mutations).combine(ch_ref_alleles))
 
     augur_align(prepare_multi_fasta.out.join(nextclade_dataset.out.ref))
 

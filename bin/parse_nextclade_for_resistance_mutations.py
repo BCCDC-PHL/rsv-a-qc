@@ -1,3 +1,4 @@
+#!/usr/bin/env python
 import argparse
 import pandas as pd
 import csv
@@ -15,7 +16,7 @@ def parse_nextclade(nextclade_df, gene):
     # Parse nextclade results, select mutations in gene of interest and remove gene from mutation info
     aa_substitutions_per_sample = {}
     for index, row in nextclade_df.iterrows():
-        seq_name = row['seqName'].replace(' Human respiratory syncytial virus B isolate hRSV/B/Australia/VIC-RCH056/2019, complete genome', '')
+        seq_name = row['seqName'].replace(' Human respiratory syncytial virus A isolate hRSV/A/England/397/2017, complete genome', '')
         aa_substitutions = row['aaSubstitutions'].split(',')
         filtered_aa_substitutions = [sub.split(':', 1)[1] for sub in aa_substitutions if sub.startswith(gene + ':')]
         aa_substitutions_per_sample[seq_name] = filtered_aa_substitutions
