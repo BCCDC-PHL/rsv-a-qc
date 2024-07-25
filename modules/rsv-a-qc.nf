@@ -65,7 +65,7 @@ process nextclade {
 
   tag { run_id }
 
-  publishDir "${params.outdir}", pattern: "${run_id}_nextclade_qc.tsv", mode: 'copy'
+  publishDir "${params.outdir}", pattern: "${run_id}_nextclade_qc_with_dataset.tsv", mode: 'copy'
   publishDir "${params.outdir}", pattern: "${run_id}.cds_translation.F.fasta", mode: 'copy'
 
   input:
@@ -73,7 +73,7 @@ process nextclade {
 
   output:
     tuple val(run_id), path("${run_id}.aln.fa"), emit: alignment
-    tuple val(run_id), path("${run_id}_nextclade_qc.tsv"), emit: qc
+    tuple val(run_id), path("${run_id}_nextclade_qc_with_dataset.tsv"), emit: qc
     tuple val(run_id), path("${run_id}.cds_translation.F.fasta"), emit: fcds
 
   script:
@@ -93,6 +93,8 @@ process nextclade {
   cp ${run_id}_nextclade/${run_id}.cds_translation.F.fasta .
   dataset_version=\$(nextclade dataset list -n ${params.nextclade_dataset} --json | python3 -c 'import json,sys; data=json.load(sys.stdin); print(data[0]["version"]["tag"])')
   nextclade_version=\$(nextclade --version | awk '{print \$2}')
+
+  append_nextclade_version.py --nextclade_tsv ${run_id}_nextclade_qc.tsv --out ${run_id}_nextclade_qc_with_dataset.tsv --nextclade_version \${nextclade_version} --dataset_version \${dataset_version}
 
 
   """
