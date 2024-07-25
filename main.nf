@@ -6,6 +6,7 @@ include { nextclade_dataset } from './modules/rsv-a-qc.nf'
 include { identify_complete_genomes } from './modules/rsv-a-qc.nf'
 include { prepare_multi_fasta } from './modules/rsv-a-qc.nf'
 include { nextclade } from './modules/rsv-a-qc.nf'
+include { detect_resistance_mutations } from './modules/rsv-a-qc.nf'
 include { augur_align } from './modules/rsv-a-qc.nf'
 include { augur_tree } from './modules/rsv-a-qc.nf'
 include { make_alleles } from './modules/rsv-a-qc.nf'
@@ -44,6 +45,9 @@ workflow {
 
   ch_primer_pairs_tsv = Channel.fromPath(params.primer_pairs_tsv)
 
+  ch_resistance_mutations = Channel.fromPath(params.resistance_mutations)
+
+
   main:
 
     identify_complete_genomes(ch_run_id.combine(ch_artic_analysis_dir))
@@ -53,6 +57,8 @@ workflow {
     nextclade_dataset(ch_run_id)
 
     nextclade(prepare_multi_fasta.out.join(nextclade_dataset.out.dataset))
+
+    detect_resistance_mutations(nextclade.out.fcds.combine(ch_resistance_mutations))
 
     augur_align(prepare_multi_fasta.out.join(nextclade_dataset.out.ref))
 

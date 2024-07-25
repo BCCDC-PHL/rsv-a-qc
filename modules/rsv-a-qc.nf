@@ -66,6 +66,7 @@ process nextclade {
   tag { run_id }
 
   publishDir "${params.outdir}", pattern: "${run_id}_nextclade_qc.tsv", mode: 'copy'
+  publishDir "${params.outdir}", pattern: "${run_id}.cds_translation.F.fasta", mode: 'copy'
 
   input:
     tuple val(run_id), path(sequences), path(dataset)
@@ -73,6 +74,7 @@ process nextclade {
   output:
     tuple val(run_id), path("${run_id}.aln.fa"), emit: alignment
     tuple val(run_id), path("${run_id}_nextclade_qc.tsv"), emit: qc
+    tuple val(run_id), path("${run_id}.cds_translation.F.fasta"), emit: fcds
 
   script:
   """
@@ -88,11 +90,41 @@ process nextclade {
     > nextclade.log 2>&1
 
 
+  cp ${run_id}_nextclade/${run_id}.cds_translation.F.fasta .
   dataset_version=\$(nextclade dataset list -n ${params.nextclade_dataset} --json | python3 -c 'import json,sys; data=json.load(sys.stdin); print(data[0]["version"]["tag"])')
   nextclade_version=\$(nextclade --version | awk '{print \$2}')
 
+  append_nextclade_version.py --nextclade_tsv ${run_id}_nextclade_qc.tsv --out ${run_id}_nextclade_qc_with_dataset.tsv --nextclade_version \${nextclade_version} --dataset_version \${dataset_version}
+  mv ${run_id}_nextclade_qc_with_dataset.tsv ${run_id}_nextclade_qc.tsv
 
   """
+}
+
+
+process detect_resistance_mutations {
+  
+  tag { run_id }
+
+  publishDir "${params.outdir}", pattern: "${run_id}_resistance_profile.csv", mode: 'copy'
+
+  input:
+    tuple val(run_id), path(nextclade_cds), path(resistance_mutations)
+
+  output:
+    tuple val(run_id), path("${run_id}_resistance_profile.csv"), emit: resistance
+
+  script:
+
+  """
+
+  parse_cds_translation.py \
+  --cds_translation ${nextclade_cds} \
+  --gene F \
+  --resistance_mutation_list ${resistance_mutations} \
+  --output ${run_id}_resistance_profile.csv
+
+  """
+
 }
 
 process augur_align {
