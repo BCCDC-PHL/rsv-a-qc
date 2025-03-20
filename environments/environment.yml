@@ -2,7 +2,6 @@ name: rsv-a-qc
 channels:
   - conda-forge
   - bioconda
-  - defaults
 dependencies:
   - python=3
   - pysam=0.19.1
