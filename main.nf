@@ -47,6 +47,10 @@ workflow {
 
   ch_resistance_mutations = Channel.fromPath(params.resistance_mutations)
 
+  ch_snpEff_config = Channel.fromPath(params.snpEff_config)
+
+  ch_snpEff_dataDir = Channel.fromPath(params.snpEff_dataDir)
+
 
   main:
 
@@ -72,7 +76,7 @@ workflow {
       build_snpeff_db(nextclade_dataset.out.ref)
     }
 
-    snpeff(ch_variants.combine(nextclade_dataset.out.ref.map{ it -> it[1] }))
+    snpeff(ch_variants.combine(nextclade_dataset.out.ref.map{ it -> it[1] }).combine(ch_snpEff_config).combine(ch_snpEff_dataDir))
 
     make_aa_table(snpeff.out)
 

@@ -233,14 +233,14 @@ process snpeff {
   publishDir "${params.outdir}/qc_annotation", pattern: "${sample_id}.ann.vcf", mode: 'copy'
 
   input:
-    tuple val(sample_id), path(variants), path(ref)
+    tuple val(sample_id), path(variants), path(ref), path(snpEff_config), path(snpEff_dataDir)
 
   output:
     tuple val(sample_id), path("${sample_id}.ann.vcf")
 
   script:
   """
-  snpEff -noLog -hgvs1LetterAa ${params.snpeff_ref}  ${variants} > ${sample_id}.ann.vcf
+  snpEff -noLog -hgvs1LetterAa ${params.snpeff_ref}  ${variants} -c ${snpEff_config} -dataDir ${snpEff_dataDir}> ${sample_id}.ann.vcf
   """
 }
 
