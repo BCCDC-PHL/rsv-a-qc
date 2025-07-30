@@ -222,7 +222,7 @@ process build_snpeff_db {
 
   script:
   """
-  build_snpeff_db_container.py --accession ${params.snpeff_ref}
+  build_snpeff_db.py --accession ${params.snpeff_ref}
   """
 }
 
